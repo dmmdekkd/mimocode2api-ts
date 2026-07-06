@@ -38,6 +38,6 @@ export function printBanner(host: string, port: number): void {
   out.write(`${pad}${B(C.yellow, 'Version')}    ${B(C.green, VERSION)}\n`);
   out.write(`${pad}${B(C.yellow, 'Endpoint')}   ${B(C.cyan, url + '/v1')}\n`);
   out.write(`${pad}${B(C.yellow, 'Health')}     ${B(C.cyan, url + '/health')}\n`);
-  out.write(`${pad}${B(C.yellow, 'Docs')}       ${B(C.cyan, 'https://github.com/nicepkg/mimocode2api')}\n`);
+  out.write(`${pad}${B(C.yellow, 'Docs')}       ${B(C.cyan, 'https://github.com/dmmdekkd/mimocode2api-ts')}\n`);
   out.write('\n');
 }

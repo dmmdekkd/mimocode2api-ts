@@ -56,6 +56,11 @@ export type Settings = z.infer<typeof settingsSchema>;
 
 const CONFIG_FILE = 'config.jsonc';
 
+/** 获取配置文件的基础目录，始终使用当前工作目录（CWD） */
+function getBaseDir(): string {
+  return process.cwd();
+}
+
 // 每个配置项的中文说明，按字段顺序分组
 const fieldComments: Record<string, string> = {
   base_url: '上游 API 基础地址',
@@ -151,7 +156,7 @@ function stripJsoncComments(content: string): string {
 }
 
 export function ensureConfigFile(): string | null {
-  const configPath = path.resolve(CONFIG_FILE);
+  const configPath = path.join(getBaseDir(), CONFIG_FILE);
   if (fs.existsSync(configPath)) return null;
 
   const defaults = settingsSchema.parse({});
@@ -192,7 +197,7 @@ export function ensureConfigFile(): string | null {
 }
 
 function readConfigFile(): Record<string, any> {
-  const configPath = path.resolve(CONFIG_FILE);
+  const configPath = path.join(getBaseDir(), CONFIG_FILE);
   if (!fs.existsSync(configPath)) return {};
 
   try {
@@ -224,7 +229,7 @@ export function getClientId(settings: Settings): string {
 
   const filePath = settings.client_id_file;
   if (filePath) {
-    const resolved = path.resolve(filePath);
+    const resolved = path.isAbsolute(filePath) ? filePath : path.join(getBaseDir(), filePath);
     if (fs.existsSync(resolved)) {
       const cid = fs.readFileSync(resolved, 'utf8').trim();
       if (cid) return cid;
@@ -234,7 +239,7 @@ export function getClientId(settings: Settings): string {
   const cid = computeMimoFingerprint();
   if (filePath) {
     try {
-      const resolved = path.resolve(filePath);
+      const resolved = path.isAbsolute(filePath) ? filePath : path.join(getBaseDir(), filePath);
       fs.writeFileSync(resolved, cid, 'utf8');
       logger.info({ path: resolved }, '已生成并持久化客户端 ID');
     } catch (exc) {

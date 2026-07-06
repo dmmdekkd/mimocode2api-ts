@@ -17,7 +17,7 @@
 
 ### 下载预编译版本（推荐）
 
-前往 [Releases](https://github.com/nicepkg/mimocode2api/releases) 页面，根据你的操作系统下载对应文件：
+前往 [Releases](https://github.com/dmmdekkd/mimocode2api-ts/releases) 页面，根据你的操作系统下载对应文件：
 
 | 平台 | x64 (Intel/AMD) | ARM64 |
 | --- | --- | --- |

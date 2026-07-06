@@ -9,6 +9,19 @@ import { printBanner } from './banner';
 
 const logger = createLogger('mimocode2api.main');
 
+async function checkUpstreamHealth(baseUrl: string): Promise<boolean> {
+  const url = baseUrl.replace(/\/$/, '');
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    clearTimeout(timer);
+    return resp.status < 500;
+  } catch {
+    return false;
+  }
+}
+
 export interface AppContext {
   app: Hono;
   jwtManager: JWTManager;
@@ -30,17 +43,28 @@ export function createApp(): AppContext {
 }
 
 export async function main(): Promise<void> {
+  // Print ASCII art banner first (before config generation logs)
+  if (process.stdout.isTTY) {
+    printBanner('0.0.0.0', 8000);
+  }
+
   const settings = getSettings();
   const { app, jwtManager } = createApp();
 
-  // Print ASCII art banner in TTY
-  if (process.stdout.isTTY) {
-    printBanner(settings.listen_host, settings.listen_port);
-  } else {
+  // Non-TTY: log startup info instead of banner
+  if (!process.stdout.isTTY) {
     logger.info(
       { version: VERSION, host: settings.listen_host, port: settings.listen_port },
       'Starting Mimocode2API',
     );
+  }
+
+  // Upstream health check
+  const upstreamOk = await checkUpstreamHealth(settings.base_url);
+  if (upstreamOk) {
+    logger.info({ url: settings.base_url }, 'Upstream is reachable');
+  } else {
+    logger.error({ url: settings.base_url }, 'Upstream is unreachable — check your network and base_url config');
   }
 
   // Warm the JWT cache at startup so the first request is fast.
