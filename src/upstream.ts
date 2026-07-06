@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
-import type { Settings } from './config.js';
-import type { JWTManager } from './auth.js';
-import { createLogger } from './logger.js';
+import type { Settings } from './config';
+import type { JWTManager } from './auth';
+import { createLogger } from './logger';
 
 const logger = createLogger('mimocode2api.upstream');
 

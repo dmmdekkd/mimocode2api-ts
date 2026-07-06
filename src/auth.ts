@@ -1,6 +1,6 @@
-import type { Settings } from './config.js';
-import { getClientId } from './config.js';
-import { createLogger } from './logger.js';
+import type { Settings } from './config';
+import { getClientId } from './config';
+import { createLogger } from './logger';
 
 const logger = createLogger('mimocode2api.auth');
 

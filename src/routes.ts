@@ -1,14 +1,14 @@
 import { Hono } from 'hono';
-import type { UpstreamClient } from './upstream.js';
-import { getSettings } from './config.js';
+import type { UpstreamClient } from './upstream';
+import { getSettings } from './config';
 import {
   buildNonStreamResponse,
   makeModelList,
   makeModelObject,
   normalizeRequest,
   parseSseData,
-} from './compat.js';
-import { createLogger } from './logger.js';
+} from './compat';
+import { createLogger } from './logger';
 
 const logger = createLogger('mimocode2api.routes');
 

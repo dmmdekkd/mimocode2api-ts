@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
-import { VERSION } from './index.js';
-import { getSettings } from './config.js';
-import { JWTManager } from './auth.js';
-import { UpstreamClient } from './upstream.js';
-import { createRouter } from './routes.js';
-import { createLogger } from './logger.js';
-import { printBanner } from './banner.js';
+import { VERSION } from './index';
+import { getSettings } from './config';
+import { JWTManager } from './auth';
+import { UpstreamClient } from './upstream';
+import { createRouter } from './routes';
+import { createLogger } from './logger';
+import { printBanner } from './banner';
 
 const logger = createLogger('mimocode2api.main');
 

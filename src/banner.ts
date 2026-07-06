@@ -1,4 +1,4 @@
-import { VERSION } from './index.js';
+import { VERSION } from './index';
 
 const C = {
   cyan: '\x1b[36m',

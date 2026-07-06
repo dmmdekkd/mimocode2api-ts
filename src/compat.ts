@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { Settings } from './config.js';
+import type { Settings } from './config';
 
 // The upstream rejects requests that do not look like they come from the
 // official mimocode client. A system message beginning with this prefix is

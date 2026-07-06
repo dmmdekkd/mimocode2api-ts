@@ -3,7 +3,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
-import { createLogger } from './logger.js';
+import { createLogger } from './logger';
 
 const logger = createLogger('mimocode2api.config');
 
