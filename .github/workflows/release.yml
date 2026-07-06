@@ -45,10 +45,6 @@ jobs:
             target: bun-windows-x64
             artifact: mimocode2api.exe
             archive: mimocode2api-win-x64.zip
-          - os: windows-latest
-            target: bun-windows-arm64
-            artifact: mimocode2api.exe
-            archive: mimocode2api-win-arm64.zip
 
     steps:
       - name: Checkout
@@ -154,7 +150,7 @@ jobs:
 
           | 平台 | x64 (Intel/AMD) | ARM64 |
           | --- | --- | --- |
-          | Windows | `mimocode2api-win-x64.zip` | `mimocode2api-win-arm64.zip` |
+          | Windows | `mimocode2api-win-x64.zip` | - |
           | macOS (Intel) | `mimocode2api-mac-x64.tar.gz` | - |
           | macOS (Apple Silicon) | - | `mimocode2api-mac-arm64.tar.gz` |
           | Linux | `mimocode2api-linux-x64.tar.gz` | `mimocode2api-linux-arm64.tar.gz` |
