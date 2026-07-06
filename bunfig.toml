@@ -1,0 +1,5 @@
+[install]
+# Bun auto-loads .env by default; no extra preload needed.
+
+[test]
+# Default test configuration; bun test discovers *.test.ts files automatically.
