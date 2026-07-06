@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { VERSION } from './index';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { getSettings } from './config';
 import { JWTManager } from './auth';
 import { UpstreamClient } from './upstream';
@@ -8,6 +9,17 @@ import { createLogger } from './logger';
 import { printBanner } from './banner';
 
 const logger = createLogger('mimocode2api.main');
+
+function readVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf-8'));
+    return pkg.version;
+  } catch {
+    return '0.0.0';
+  }
+}
+
+const VERSION = readVersion();
 
 async function checkUpstreamHealth(baseUrl: string): Promise<boolean> {
   const url = baseUrl.replace(/\/$/, '');
@@ -45,7 +57,7 @@ export function createApp(): AppContext {
 export async function main(): Promise<void> {
   // Print ASCII art banner first (before config generation logs)
   if (process.stdout.isTTY) {
-    printBanner('0.0.0.0', 8000);
+    printBanner('0.0.0.0', 8000, VERSION);
   }
 
   const settings = getSettings();

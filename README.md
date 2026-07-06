@@ -221,13 +221,13 @@ dist/
 ```
 mimocode2api-ts/
 ├── src/
-│   ├── index.ts       # 版本
 │   ├── main.ts       # Hono 应用与生命周期
 │   ├── config.ts     # 配置（Zod + JSONC）与硬件指纹计算
 │   ├── auth.ts       # JWT 自动获取、缓存、刷新（含重试）
 │   ├── upstream.ts   # 上游 HTTP 客户端（含 429 指数退避）
 │   ├── compat.ts    # OpenAI 请求/响应兼容转换
 │   ├── routes.ts     # OpenAI 兼容路由
+│   ├── banner.ts     # 启动 Banner
 │   └── logger.ts     # 自定义彩色日志
 ├── bin.ts            # 直接启动入口
 ├── tests/

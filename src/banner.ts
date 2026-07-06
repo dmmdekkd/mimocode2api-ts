@@ -1,5 +1,3 @@
-import { VERSION } from './index';
-
 const C = {
   cyan: '\x1b[36m',
   blue: '\x1b[34m',
@@ -21,7 +19,7 @@ const LOGO_LINES = [
   '  ██║ ╚═╝ ██║██║╚██████╗╚██████╔╝╚██████╔╝██████╔╝╚██████╔╝',
   '  ╚═╝     ╚═╝╚═╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚═════╝  ╚═════╝',
 ];
-export function printBanner(host: string, port: number): void {
+export function printBanner(host: string, port: number, version: string): void {
   const url = `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${port}`;
   const pad = '  ';
   const out = process.stdout;
@@ -35,7 +33,7 @@ export function printBanner(host: string, port: number): void {
   out.write('\n');
   out.write(`${pad}${C.gray}OpenAI-compatible reverse proxy for Xiaomi MiMo AI${C.reset}\n`);
   out.write('\n');
-  out.write(`${pad}${B(C.yellow, 'Version')}    ${B(C.green, VERSION)}\n`);
+  out.write(`${pad}${B(C.yellow, 'Version')}    ${B(C.green, version)}\n`);
   out.write(`${pad}${B(C.yellow, 'Endpoint')}   ${B(C.cyan, url + '/v1')}\n`);
   out.write(`${pad}${B(C.yellow, 'Health')}     ${B(C.cyan, url + '/health')}\n`);
   out.write(`${pad}${B(C.yellow, 'Docs')}       ${B(C.cyan, 'https://github.com/dmmdekkd/mimocode2api-ts')}\n`);
