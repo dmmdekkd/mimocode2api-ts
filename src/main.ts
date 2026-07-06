@@ -5,6 +5,7 @@ import { JWTManager } from './auth.js';
 import { UpstreamClient } from './upstream.js';
 import { createRouter } from './routes.js';
 import { createLogger } from './logger.js';
+import { printBanner } from './banner.js';
 
 const logger = createLogger('mimocode2api.main');
 
@@ -32,10 +33,15 @@ export async function main(): Promise<void> {
   const settings = getSettings();
   const { app, jwtManager } = createApp();
 
-  logger.info(
-    { version: VERSION, host: settings.listen_host, port: settings.listen_port },
-    'Starting Mimocode2API',
-  );
+  // Print ASCII art banner in TTY
+  if (process.stdout.isTTY) {
+    printBanner(settings.listen_host, settings.listen_port);
+  } else {
+    logger.info(
+      { version: VERSION, host: settings.listen_host, port: settings.listen_port },
+      'Starting Mimocode2API',
+    );
+  }
 
   // Warm the JWT cache at startup so the first request is fast.
   try {

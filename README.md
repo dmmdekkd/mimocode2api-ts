@@ -1,83 +1,57 @@
 # Mimocode2API (TypeScript)
 
+![Mimocode2API](https://socialify.git.ci/dmmdekkd/mimocode2api-ts/image?description=1&font=Source+Code+Pro&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
+
 将小米 MiMo AI（`api.xiaomimimo.com`）包装成 **OpenAI 兼容** 的本地反向代理。
 
-TypeScript 版本，基于 [Bun](https://bun.sh/) + [Hono](https://hono.dev/)，行为与 Python 版本一致。
+基于 [Bun](https://bun.sh/) + [Hono](https://hono.dev/)，支持流式输出、自动 JWT 获取、模型别名映射。
 
-你可以像调用 OpenAI API 一样使用 MiMo 的免费模型，支持流式输出、自动 JWT 获取、模型别名映射。
+## 前提条件
+
+- [Bun](https://bun.sh/) >= 1.1（推荐）或 Node.js >= 18
+- 可访问 `https://api.xiaomimimo.com` 的网络环境
 
 ---
 
 ## 快速开始
 
-### 1. 安装依赖
+### 下载预编译版本（推荐）
 
-项目使用 [Bun](https://bun.sh/) 作为主要运行时，也支持 npm / pnpm / yarn。
+前往 [Releases](https://github.com/nicepkg/mimocode2api/releases) 页面，根据你的操作系统下载对应文件：
+
+| 平台 | x64 (Intel/AMD) | ARM64 |
+| --- | --- | --- |
+| Windows | `mimocode2api-win-x64.zip` | - |
+| macOS (Intel) | `mimocode2api-mac-x64.tar.gz` | - |
+| macOS (Apple Silicon) | - | `mimocode2api-mac-arm64.tar.gz` |
+| Linux | `mimocode2api-linux-x64.tar.gz` | `mimocode2api-linux-arm64.tar.gz` |
+
+下载后无需安装 Bun 或 Node.js，解压后直接运行：
 
 ```bash
-# 推荐：使用 Bun
-bun install
+# Windows
+.\mimocode2api.exe
 
-# 或者使用 npm
-npm install
-
-# 或者使用 pnpm
-pnpm install
-
-# 或者使用 yarn
-yarn install
+# macOS / Linux
+./mimocode2api
 ```
 
-### 2. 启动服务
+首次启动会自动生成 `config.jsonc` 配置文件，服务默认监听 `http://127.0.0.1:8000`。
+
+### 从源码运行
 
 ```bash
+# 安装依赖
+bun install
+
 # 开发模式（热重载）
 bun run dev
 
 # 生产模式
 bun run start
-
-# 直接运行 TypeScript 源码
-bun src/main.ts
-
-# 运行入口脚本
-bun bin.ts
 ```
 
-默认监听 `http://127.0.0.1:8000`。
-
-### 3. 构建与部署
-
-```bash
-# 构建全部平台产物（Bun JS / Node CJS / 6 个平台可执行文件）
-bun run build
-
-# 单独构建某项
-bun run build:bun          # 输出到 dist/bun/
-bun run build:node         # 输出到 dist/node/
-bun run build:bin          # 构建全部 6 个平台可执行文件
-bun run build:bin:win-x64  # 单独构建 Windows x64
-bun run build:bin:mac-arm64
-# ...其他平台同理
-```
-
-构建产物结构：
-
-```
-dist/
-├── bun/                 # Bun 目标 JS（跨平台）
-├── node/                # Node.js CJS（跨平台）
-├── bin-win-x64/         # Windows x64 可执行文件
-├── bin-win-arm64/       # Windows ARM64
-├── bin-mac-x64/         # macOS Intel
-├── bin-mac-arm64/       # macOS Apple Silicon
-├── bin-linux-x64/       # Linux x64
-└── bin-linux-arm64/     # Linux ARM64
-```
-
-可执行文件无需安装任何运行时，解压即用。
-
-### 4. 测试接口
+### 测试接口
 
 ```bash
 # 列出模型
@@ -102,7 +76,7 @@ curl -X POST http://127.0.0.1:8000/v1/chat/completions \
   }'
 ```
 
-### 5. 在 OpenAI 客户端中使用
+### 在 OpenAI 客户端中使用
 
 ```typescript
 import OpenAI from 'openai';
@@ -122,49 +96,6 @@ for await (const chunk of response) {
   process.stdout.write(chunk.choices[0]?.delta?.content ?? '');
 }
 ```
-
----
-
-## 开发
-
-```bash
-# 热重载开发
-bun run dev
-
-# 运行单元测试
-bun test
-
-# 类型检查
-bun run typecheck
-
-# 代码风格检查与格式化
-bun run lint
-bun run format
-
-# 构建产物
-bun run build
-```
-
-### 项目脚本
-
-| 命令 | 说明 |
-| --- | --- |
-| `bun run dev` | 热重载开发模式 |
-| `bun run start` | 启动生产服务 |
-| `bun run build` | 构建全部产物（Bun JS + Node CJS + 6 个平台可执行文件） |
-| `bun run build:bun` | 仅构建 Bun 目标 JS |
-| `bun run build:node` | 仅构建 Node.js CJS |
-| `bun run build:bin` | 构建全部 6 个平台可执行文件 |
-| `bun run build:bin:win-x64` | 构建 Windows x64 可执行文件 |
-| `bun run build:bin:win-arm64` | 构建 Windows ARM64 可执行文件 |
-| `bun run build:bin:mac-x64` | 构建 macOS Intel 可执行文件 |
-| `bun run build:bin:mac-arm64` | 构建 macOS Apple Silicon 可执行文件 |
-| `bun run build:bin:linux-x64` | 构建 Linux x64 可执行文件 |
-| `bun run build:bin:linux-arm64` | 构建 Linux ARM64 可执行文件 |
-| `bun test` | 运行单元测试 |
-| `bun run typecheck` | TypeScript 类型检查 |
-| `bun run lint` | ESLint 代码检查 |
-| `bun run format` | Prettier 格式化 |
 
 ---
 
@@ -208,11 +139,9 @@ bun run build
 }
 ```
 
----
+### 模型映射
 
-## 模型映射
-
-如果你希望把任意模型名转发到 `mimo-auto`，编辑 `config.jsonc`：
+通过 `model_map` 可以把任意模型名映射到 `mimo-auto`：
 
 ```jsonc
 {
@@ -223,15 +152,67 @@ bun run build
 }
 ```
 
-之后请求：
+之后请求 `model: "gpt-4o"` 会被自动映射到 `mimo-auto`。
+
+---
+
+## 开发
 
 ```bash
-curl -X POST http://127.0.0.1:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"gpt-4o","messages":[{"role":"user","content":"hi"}]}'
+bun run dev          # 热重载开发
+bun test             # 运行单元测试
+bun run typecheck    # TypeScript 类型检查
+bun run lint         # ESLint 代码检查
+bun run format       # Prettier 格式化
 ```
 
-会被自动映射到 `mimo-auto`。
+### 构建
+
+```bash
+# 构建全部产物（Bun JS + Node CJS + 5 个平台可执行文件）
+bun run build
+
+# 单独构建某项
+bun run build:bun          # 输出到 dist/bun/
+bun run build:node         # 输出到 dist/node/
+bun run build:bin          # 构建全部 5 个平台可执行文件
+bun run build:bin:win-x64  # 单独构建 Windows x64
+bun run build:bin:mac-arm64
+# ...其他平台同理
+```
+
+构建产物结构：
+
+```
+dist/
+├── bun/                 # Bun 目标 JS（跨平台）
+├── node/                # Node.js CJS（跨平台）
+├── bin-win-x64/         # Windows x64 可执行文件
+├── bin-mac-x64/         # macOS Intel
+├── bin-mac-arm64/       # macOS Apple Silicon
+├── bin-linux-x64/       # Linux x64
+└── bin-linux-arm64/     # Linux ARM64
+```
+
+### 项目脚本
+
+| 命令 | 说明 |
+| --- | --- |
+| `bun run dev` | 热重载开发模式 |
+| `bun run start` | 启动生产服务 |
+| `bun run build` | 构建全部产物 |
+| `bun run build:bun` | 仅构建 Bun 目标 JS |
+| `bun run build:node` | 仅构建 Node.js CJS |
+| `bun run build:bin` | 构建全部 5 个平台可执行文件 |
+| `bun run build:bin:win-x64` | 构建 Windows x64 可执行文件 |
+| `bun run build:bin:mac-x64` | 构建 macOS Intel 可执行文件 |
+| `bun run build:bin:mac-arm64` | 构建 macOS Apple Silicon 可执行文件 |
+| `bun run build:bin:linux-x64` | 构建 Linux x64 可执行文件 |
+| `bun run build:bin:linux-arm64` | 构建 Linux ARM64 可执行文件 |
+| `bun test` | 运行单元测试 |
+| `bun run typecheck` | TypeScript 类型检查 |
+| `bun run lint` | ESLint 代码检查 |
+| `bun run format` | Prettier 格式化 |
 
 ---
 
@@ -253,8 +234,7 @@ mimocode2api-ts/
 │   └── test_compat.test.ts  # 单元测试
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml      # CI 测试
-│       └── release.yml # 发布发行版
+│       └── release.yml # 构建与发布
 ├── package.json
 ├── tsconfig.json
 ├── bunfig.toml
@@ -275,8 +255,6 @@ mimocode2api-ts/
 - **硬件指纹**：使用 Node.js `os` 模块（`os.cpus()`、`os.hostname()` 等），无需 subprocess
 - **TLS 指纹**：Bun.fetch 不支持 TLS 指纹伪装。若上游开始检测，需另寻方案
 
-> 本项目是 Python 版本的 TypeScript 移植，硬件指纹算法与 Python 版本一致，在同一台机器上会生成相同的 client id。
-
 ---
 
 ## 常见问题
@@ -293,6 +271,29 @@ mimocode2api-ts/
 ### 调试日志
 
 编辑 `config.jsonc`，把 `log_level` 改为 `debug`，重启生效。
+
+### 如何在远程服务器上使用
+
+将 `listen_host` 改为 `0.0.0.0`（默认值），即可从外部访问：
+
+```jsonc
+{
+  "listen_host": "0.0.0.0",
+  "listen_port": 8000
+}
+```
+
+然后通过 `http://your-server:8000/v1` 访问。
+
+### 如何修改默认模型
+
+编辑 `config.jsonc`，设置 `default_model`：
+
+```jsonc
+{
+  "default_model": "mimo-auto"
+}
+```
 
 ---
 
