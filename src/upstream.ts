@@ -68,7 +68,7 @@ export class UpstreamClient {
       body.stream_options = { include_usage: true };
     }
 
-    logger.debug({ url }, 'Proxying chat to upstream');
+    logger.debug({ url }, '正在代理请求到上游');
 
     let resp: Response | null = null;
     let jwt = await this.jwtManager.getJwt();
@@ -83,7 +83,7 @@ export class UpstreamClient {
 
         // Handle 401: refresh JWT and retry once within the same attempt.
         if (resp.status === 401) {
-          logger.info('Upstream returned 401, refreshing JWT and retrying');
+          logger.info('上游返回 401，正在刷新 JWT 并重试');
           jwt = await this.jwtManager.getJwt(true);
           const newHeaders = this.chatHeaders(jwt);
           resp = await this.fetchOnce(url, newHeaders, body, controller.signal);
@@ -98,7 +98,7 @@ export class UpstreamClient {
 
           logger.warn(
             { attempt: attempt + 1, maxAttempts, delay: delaySec, retryAfter: retryAfterSec },
-            'Upstream returned 429, retrying with backoff',
+            '上游返回 429，正在指数退避重试',
           );
 
           await sleep(delaySec * 1000);
@@ -113,7 +113,7 @@ export class UpstreamClient {
     }
 
     if (resp && resp.status === 429) {
-      logger.warn({ maxAttempts }, 'Upstream returned 429, max retries reached');
+      logger.warn({ maxAttempts }, '上游返回 429，已达最大重试次数');
     }
 
     return resp!;

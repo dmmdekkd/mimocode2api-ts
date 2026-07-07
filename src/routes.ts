@@ -12,6 +12,28 @@ import { createLogger } from './logger';
 
 const logger = createLogger('mimocode2api.routes');
 
+const RETRY_CODES = new Set(['ConnectionRefused', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNRESET', 'EPIPE', 'UND_ERR_CONNECT_TIMEOUT']);
+
+async function chatWithRetry(upstream: UpstreamClient, body: any, maxAttempts: number, baseDelay: number): Promise<Response> {
+  let lastErr: any;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await upstream.chat(body);
+    } catch (exc: any) {
+      const code = exc?.code ?? exc?.errno;
+      if (RETRY_CODES.has(code) && attempt < maxAttempts) {
+        const delay = baseDelay * 2 ** (attempt - 1) + Math.random() * 0.5;
+        logger.warn({ attempt, maxAttempts, delay: delay.toFixed(1), err: exc }, '上游连接错误，正在重试');
+        await Bun.sleep(delay * 1000);
+        lastErr = exc;
+        continue;
+      }
+      throw exc;
+    }
+  }
+  throw lastErr;
+}
+
 export function createRouter(upstream: UpstreamClient): Hono {
   const app = new Hono();
 
@@ -43,7 +65,7 @@ export function createRouter(upstream: UpstreamClient): Hono {
       ...Object.values(settings.model_map),
     ]);
     if (!validIds.has(target)) {
-      return c.json({ error: 'Model not found' }, 404);
+      return c.json({ error: '未找到该模型' }, 404);
     }
     return c.json(makeModelObject(modelId));
   });
@@ -54,7 +76,7 @@ export function createRouter(upstream: UpstreamClient): Hono {
     try {
       body = await c.req.json();
     } catch (exc: any) {
-      return c.json({ error: `Invalid JSON body: ${exc?.message ?? exc}` }, 400);
+      return c.json({ error: `请求 JSON 格式错误: ${exc?.message ?? exc}` }, 400);
     }
 
     const originalModel = body.model || settings.default_model;
@@ -63,17 +85,17 @@ export function createRouter(upstream: UpstreamClient): Hono {
 
     let upstreamResp: Response;
     try {
-      upstreamResp = await upstream.chat(normalized);
+      upstreamResp = await chatWithRetry(upstream, normalized, settings.retry_max_attempts, settings.retry_base_delay_sec);
     } catch (exc: any) {
-      logger.error({ err: exc }, 'Upstream connection error');
-      return c.json({ error: `Upstream connection error: ${exc?.message ?? exc}` }, 502);
+      logger.error({ err: exc }, '上游连接错误');
+      return c.json({ error: `上游连接错误: ${exc?.message ?? exc}` }, 502);
     }
 
     if (!upstreamResp.ok) {
       const text = await upstreamResp.text();
       logger.warn(
         { status: upstreamResp.status, body: text.slice(0, 500) },
-        'Upstream returned non-200 for chat',
+        '上游返回非 200 状态码',
       );
       return c.json({ error: text }, upstreamResp.status as any);
     }
@@ -95,7 +117,7 @@ export function createRouter(upstream: UpstreamClient): Hono {
     const chunks: any[] = [];
     const reader = upstreamResp.body?.getReader();
     if (!reader) {
-      return c.json({ error: 'Upstream returned no body' }, 502);
+      return c.json({ error: '上游未返回响应体' }, 502);
     }
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
@@ -118,7 +140,7 @@ export function createRouter(upstream: UpstreamClient): Hono {
     }
 
     if (chunks.length === 0) {
-      return c.json({ error: 'Upstream returned an empty response' }, 502);
+      return c.json({ error: '上游返回空响应' }, 502);
     }
 
     return c.json(buildNonStreamResponse(chunks, originalModel));

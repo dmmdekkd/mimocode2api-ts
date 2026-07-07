@@ -84,7 +84,7 @@ export class JWTManager {
     let lastError: any = null;
 
     for (let attempt = 0; attempt <= maxAttempts; attempt++) {
-      logger.debug({ url, attempt: attempt + 1, maxAttempts: maxAttempts + 1 }, 'Refreshing JWT');
+      logger.debug({ url, attempt: attempt + 1, maxAttempts: maxAttempts + 1 }, '正在刷新 JWT');
 
       try {
         const resp = await fetch(url, {
@@ -104,7 +104,7 @@ export class JWTManager {
           const delaySec = retryAfterSec !== null ? Math.max(retryAfterSec, backoffSec) : backoffSec;
           logger.warn(
             { attempt: attempt + 1, maxAttempts, status: resp.status, delay: delaySec },
-            'Bootstrap returned retryable status, retrying with backoff',
+            'Bootstrap 返回可重试状态，正在指数退避重试',
           );
           await sleep(delaySec * 1000);
           lastError = new Error(`HTTP ${resp.status}`);
@@ -113,23 +113,23 @@ export class JWTManager {
 
         if (!resp.ok) {
           const text = await resp.text();
-          logger.error({ status: resp.status, body: text }, 'Bootstrap failed');
+          logger.error({ status: resp.status, body: text }, 'Bootstrap 请求失败');
           throw new Error(`Failed to acquire JWT: ${resp.status} ${text}`);
         }
 
         const data: any = await resp.json();
         const jwt = data.jwt;
         if (!jwt || typeof jwt !== 'string') {
-          throw new Error('Bootstrap response missing jwt field');
+          throw new Error('Bootstrap 响应缺少 jwt 字段');
         }
 
         this.jwt = jwt;
         this.exp = decodeExp(jwt);
         if (this.exp) {
           const ttl = Math.floor(this.exp - Date.now() / 1000);
-          logger.info({ ttl }, 'JWT refreshed, expires in seconds');
+          logger.info({ ttl }, 'JWT 刷新成功');
         } else {
-          logger.info('JWT refreshed (no exp claim)');
+          logger.info('JWT 刷新成功（无过期时间）');
         }
         return jwt;
       } catch (exc) {
@@ -137,8 +137,8 @@ export class JWTManager {
         if (isRetryableError(exc) && attempt < maxAttempts) {
           const backoffSec = baseDelay * Math.pow(2, attempt);
           logger.warn(
-            { attempt: attempt + 1, maxAttempts, delay: backoffSec, err: exc?.message ?? exc },
-            'Bootstrap network error, retrying with backoff',
+            { attempt: attempt + 1, maxAttempts, err: exc?.message ?? exc },
+            'Bootstrap 网络错误，正在指数退避重试',
           );
           await sleep(backoffSec * 1000);
           continue;
@@ -147,6 +147,6 @@ export class JWTManager {
       }
     }
 
-    throw lastError ?? new Error('Bootstrap failed after retries');
+    throw lastError ?? new Error('Bootstrap 重试后仍失败');
   }
 }

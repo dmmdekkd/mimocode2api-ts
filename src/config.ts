@@ -23,7 +23,7 @@ export function computeMimoFingerprint(): string {
   const username = os.userInfo().username;
 
   const payload = [hostname, nodePlatform, nodeArch, cpu, username].join('|');
-  logger.debug({ payload }, 'Mimo fingerprint payload');
+  logger.debug({ payload }, 'Mimo 指纹载荷');
   return crypto.createHash('sha256').update(payload, 'utf8').digest('hex');
 }
 

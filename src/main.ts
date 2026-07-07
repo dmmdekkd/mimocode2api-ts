@@ -12,7 +12,7 @@ const logger = createLogger('mimocode2api.main');
 
 function readVersion(): string {
   try {
-    const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf-8'));
+    const pkg = JSON.parse(readFileSync(resolve(import.meta.dir, '..', 'package.json'), 'utf-8'));
     return pkg.version;
   } catch {
     return '0.0.0';
@@ -21,16 +21,17 @@ function readVersion(): string {
 
 const VERSION = readVersion();
 
-async function checkUpstreamHealth(baseUrl: string): Promise<boolean> {
-  const url = baseUrl.replace(/\/$/, '');
+async function checkUpstreamHealth(baseUrl: string): Promise<void> {
+  // Try the bootstrap endpoint — any HTTP response means the server is reachable
+  const url = baseUrl.replace(/\/$/, '') + '/api/free-ai/bootstrap';
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    const timer = setTimeout(() => controller.abort(), 10000);
+    const resp = await fetch(url, { method: 'GET', signal: controller.signal });
     clearTimeout(timer);
-    return resp.status < 500;
-  } catch {
-    return false;
+    logger.info({ url: baseUrl }, '上游服务可达');
+  } catch (exc: any) {
+    logger.warn({ url: baseUrl, err: exc?.message ?? exc }, '上游健康检查失败，将在首次请求时重试');
   }
 }
 
@@ -67,42 +68,38 @@ export async function main(): Promise<void> {
   if (!process.stdout.isTTY) {
     logger.info(
       { version: VERSION, host: settings.listen_host, port: settings.listen_port },
-      'Starting Mimocode2API',
+      'Mimocode2API 启动中',
     );
   }
 
-  // Upstream health check
-  const upstreamOk = await checkUpstreamHealth(settings.base_url);
-  if (upstreamOk) {
-    logger.info({ url: settings.base_url }, 'Upstream is reachable');
-  } else {
-    logger.error({ url: settings.base_url }, 'Upstream is unreachable — check your network and base_url config');
-  }
-
-  // Warm the JWT cache at startup so the first request is fast.
-  try {
-    await jwtManager.getJwt();
-    logger.info('JWT pre-warmed successfully');
-  } catch (exc: any) {
-    logger.warn({ err: exc?.message ?? exc }, 'Could not pre-warm JWT');
-  }
-
+  // Start server immediately, run health check and JWT pre-warm in background
   const server = Bun.serve({
     port: settings.listen_port,
     hostname: settings.listen_host,
-    idleTimeout: 0, // 禁用空闲超时
+    idleTimeout: 0,
     fetch: app.fetch,
   });
 
   const shutdown = (signal: string) => {
-    logger.info({ signal }, 'Shutting down');
+    logger.info({ signal }, '正在关闭');
     server.stop(true);
     process.exit(0);
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  logger.info({ url: `http://${server.hostname}:${server.port}` }, 'Mimocode2API listening');
+  logger.info({ url: `http://${server.hostname}:${server.port}` }, 'Mimocode2API 已启动');
+
+  // Warm JWT before accepting requests (blocking)
+  try {
+    await jwtManager.getJwt();
+    logger.info('JWT 预热成功');
+  } catch (exc: any) {
+    logger.warn({ err: exc?.message ?? exc }, 'JWT 预热失败，将在首次请求时重试');
+  }
+
+  // Background: health check (non-blocking)
+  checkUpstreamHealth(settings.base_url);
 }
 
 if (import.meta.main) {
