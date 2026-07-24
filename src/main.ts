@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { getSettings } from './config';
 import { JWTManager } from './auth';
 import { UpstreamClient } from './upstream';
+import { getZenConfig } from './zen';
 import { createRouter } from './routes';
 import { createLogger } from './logger';
 import { printBanner } from './banner';
@@ -45,9 +46,10 @@ export function createApp(): AppContext {
   const settings = getSettings();
   const jwtManager = new JWTManager(settings);
   const upstream = new UpstreamClient(settings, jwtManager);
+  const zenConfig = getZenConfig(settings);
 
   const app = new Hono();
-  app.route('/', createRouter(upstream));
+  app.route('/', createRouter(upstream, zenConfig));
 
   // Health endpoint (lightweight, no upstream calls).
   app.get('/health', (c) => c.json({ status: 'ok', version: VERSION }));
@@ -88,7 +90,15 @@ export async function main(): Promise<void> {
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  logger.info({ url: `http://${server.hostname}:${server.port}` }, 'Mimocode2API 已启动');
+  const zenConfig = getZenConfig(settings);
+  logger.info(
+    {
+      url: `http://${server.hostname}:${server.port}`,
+      provider: settings.provider,
+      zenEnabled: Boolean(zenConfig.apiKey),
+    },
+    'Mimocode2API 已启动',
+  );
 
   // Warm JWT before accepting requests (blocking)
   try {

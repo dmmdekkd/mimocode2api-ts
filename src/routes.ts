@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import type { UpstreamClient } from './upstream';
+import type { ZenConfig } from './zen';
+import { zenChat, getZenConfig } from './zen';
 import { getSettings } from './config';
 import {
   buildNonStreamResponse,
@@ -34,7 +36,7 @@ async function chatWithRetry(upstream: UpstreamClient, body: any, maxAttempts: n
   throw lastErr;
 }
 
-export function createRouter(upstream: UpstreamClient): Hono {
+export function createRouter(upstream: UpstreamClient, zenConfig?: ZenConfig): Hono {
   const app = new Hono();
 
   // Request-line middleware: log method/path/status/duration for every request.
@@ -84,17 +86,49 @@ export function createRouter(upstream: UpstreamClient): Hono {
     const clientStream = Boolean(normalized.stream);
 
     let upstreamResp: Response;
-    try {
-      upstreamResp = await chatWithRetry(upstream, normalized, settings.retry_max_attempts, settings.retry_base_delay_sec);
-    } catch (exc: any) {
-      logger.error({ err: exc }, '上游连接错误');
-      return c.json({ error: `上游连接错误: ${exc?.message ?? exc}` }, 502);
+    let usedFallback = false;
+    const provider = settings.provider;
+
+    // 决定是否使用 MiMo Provider
+    const useMimo = provider === 'mimo' || provider === 'auto';
+    const useZen = (provider === 'zen' || provider === 'auto') && zenConfig?.apiKey;
+
+    if (useMimo) {
+      try {
+        upstreamResp = await chatWithRetry(upstream, normalized, settings.retry_max_attempts, settings.retry_base_delay_sec);
+      } catch (exc: any) {
+        logger.error({ err: exc }, '上游连接错误');
+        // auto 模式下尝试 Zen
+        if (provider === 'auto' && useZen) {
+          logger.info('MiMo 连接失败，切换到 Zen Provider');
+          upstreamResp = await zenChat(normalized, zenConfig!, { timeout: settings.request_timeout * 1000 });
+          usedFallback = true;
+        } else {
+          return c.json({ error: `上游连接错误: ${exc?.message ?? exc}` }, 502);
+        }
+      }
+
+      // MiMo 返回 429 或 5xx，auto 模式下尝试 Zen
+      if (!usedFallback && !upstreamResp.ok && provider === 'auto' && useZen) {
+        const status = upstreamResp.status;
+        if (status === 429 || status >= 500) {
+          logger.warn({ status }, 'MiMo 返回错误，切换到 Zen Provider');
+          upstreamResp = await zenChat(normalized, zenConfig!, { timeout: settings.request_timeout * 1000 });
+          usedFallback = true;
+        }
+      }
+    } else if (useZen) {
+      // 直接使用 Zen
+      upstreamResp = await zenChat(normalized, zenConfig!, { timeout: settings.request_timeout * 1000 });
+      usedFallback = true;
+    } else {
+      return c.json({ error: '未配置任何 Provider' }, 500);
     }
 
     if (!upstreamResp.ok) {
       const text = await upstreamResp.text();
       logger.warn(
-        { status: upstreamResp.status, body: text.slice(0, 500) },
+        { status: upstreamResp.status, body: text.slice(0, 500), provider: usedFallback ? 'zen' : 'mimo' },
         '上游返回非 200 状态码',
       );
       return c.json({ error: text }, upstreamResp.status as any);

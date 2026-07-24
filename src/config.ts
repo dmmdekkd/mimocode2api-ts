@@ -47,6 +47,18 @@ const settingsSchema = z.object({
   retry_max_attempts: z.number().int().default(5),
   retry_base_delay_sec: z.number().default(1.0),
 
+  // ===== 备用 Provider (OpenCode Zen) =====
+  provider: z.enum(['mimo', 'zen', 'auto']).default('auto'),
+  zen_api_key: z.string().default(''),
+  zen_base_url: z.string().default('https://opencode.ai/zen/v1'),
+  zen_default_model: z.string().default('mimo-v2.5-free'),
+  zen_fallback_models: z.array(z.string()).default([
+    'mimo-v2.5-free',
+    'deepseek-v4-flash-free',
+    'laguna-s-2.1-free',
+    'ling-3.0-flash-free',
+  ]),
+
   listen_host: z.string().default('0.0.0.0'),
   listen_port: z.number().int().default(8000),
   log_level: z.string().default('info'),
@@ -77,6 +89,11 @@ const fieldComments: Record<string, string> = {
   request_timeout: '上游请求超时秒数',
   retry_max_attempts: '429 / 网络错误的最大重试次数',
   retry_base_delay_sec: '重试基础延迟秒数（指数退避）',
+  provider: "Provider 模式: 'auto' | 'mimo' | 'zen'（auto: MiMo 失败时切换 Zen）",
+  zen_api_key: 'OpenCode Zen API Key（留空则不使用备用 Provider）',
+  zen_base_url: 'Zen API 基础地址',
+  zen_default_model: 'Zen 默认模型',
+  zen_fallback_models: 'Zen 备用模型列表（按优先级排序）',
   listen_host: '服务监听地址',
   listen_port: '服务监听端口',
   log_level: '日志级别：trace、debug、info、warn、error、fatal',
@@ -89,6 +106,7 @@ const fieldGroups: Array<{ title: string; fields: string[] }> = [
   { title: '客户端 ID', fields: ['client_id', 'client_id_file', 'jwt_leeway_seconds'] },
   { title: '模型设置', fields: ['default_model', 'model_map', 'request_timeout'] },
   { title: '重试策略', fields: ['retry_max_attempts', 'retry_base_delay_sec'] },
+  { title: '备用 Provider (OpenCode Zen)', fields: ['provider', 'zen_api_key', 'zen_base_url', 'zen_default_model', 'zen_fallback_models'] },
   { title: '服务器', fields: ['listen_host', 'listen_port', 'log_level'] },
 ];
 
